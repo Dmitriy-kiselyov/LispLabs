@@ -34,15 +34,49 @@
 	)
 )
 
-(defmacro : (x &rest funcs)
-	`(let 
-		((val ,x))
-		(mapcar
-			(lambda (func)
-				(setq val (eval-dash val func))
-			)
-			(quote ,funcs)
+(defun find-next-coma (tokens)
+	(let
+		(
+			(token (car tokens))
+			(rest (cdr tokens))
 		)
-		val
+		(cond
+			((eq token '&) (list Nil rest))
+			((null rest) (list (list token) Nil))
+			(T
+				(let
+					((ans (find-next-coma rest)))
+					(list (cons token (car ans)) (cadr ans))
+				)
+			)
+		)
+	)	
+)
+
+(defmacro : (x &rest tokens)
+	`(let 
+		(
+			(val ,x)
+			(equation (find-next-coma ',tokens))
+		)
+		(let
+			(
+				(func (car equation))
+				(rest (cadr equation))
+			)
+			(cond
+				((null (car func)) val)
+				(T
+					(setq val (eval-dash val func))
+					(eval `(: ',val ,@rest))
+				)
+			)
+		)
 	)
 )
+
+
+
+
+
+
